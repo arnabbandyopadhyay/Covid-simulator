@@ -469,14 +469,75 @@ shinyServer(function(input, output, session) {
     
     # plot ode
     
-    output$age_inf <- renderPlot({
+    # output$age_inf <- renderPlot({
+    #   
+    #   if (input$logscale %% 2 == 0){
+    #     plot_age_inf(dy_data)
+    #   }
+    #   else{
+    #     plot_age_inf_log(dy_data)
+    #   }
+    #   
+    # })
+    
+    output$age_inf_plotly <- renderPlotly({
       
-      if (input$logscale %% 2 == 0){
-        plot_age_inf(dy_data)
-      }
-      else{
-        plot_age_inf_log(dy_data)
-      }
+      sz=dim(dy_data)[1]
+      dy_data$seasonality<-seasonal_factor[1:sz]
+      
+      plot_age_inf_plotly(dy_data)
+      
+      # # chart option buttons
+      # scale_axis <- list(
+      #   type = "buttons",
+      #   direction = "right",
+      #   xanchor = 'center',
+      #   yanchor = "top",
+      #   pad = list('r'= 0, 't'= 10, 'b' = 10),
+      #   x = 0.5,
+      #   y = 1.27,
+      #   buttons = list(
+      #     
+      #     list(method = "restyle",
+      #          args = list("type", "linear"),
+      #          label = "Linear"),
+      #     
+      #     list(method = "restyle",
+      #          args = list("type", "log"),
+      #          label = "log")
+      #     
+      #   ))
+      # 
+      # # color option buttons  
+      # plot_types <- list(
+      #   type = "buttons",
+      #   direction = "right",
+      #   xanchor = 'center',
+      #   yanchor = "top",
+      #   pad = list('r'= 0, 't'= 10, 'b' = 10),
+      #   x = 0.5,
+      #   y = 1.,
+      #   buttons = list(
+      #     
+      #     list(method = "restyle",
+      #          args = list("colorscale", "Rainbow"),
+      #          label = "Rainbow"),
+      #     
+      #     list(method = "restyle",
+      #          args = list("colorscale", "Jet"),
+      #          label = "Jet"),
+      #     
+      #     list(method = "restyle",
+      #          args = list("colorscale", "Earth"),
+      #          label = "Earth"),
+      #     
+      #     list(method = "restyle",
+      #          args = list("colorscale", "Electric"),
+      #          label = "Electric")
+      #   ))
+      
+      
+      
       
     })
     

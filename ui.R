@@ -196,16 +196,18 @@ shinyUI(pageWithSidebar(
                          withSpinner(rbokehOutput('tot_inf',width = "350px", height = "350px")),
                          withSpinner(rbokehOutput('tot_dead',width = "350px", height = "350px")))),
     
-
-    fluidRow(
-      box(
-        title = "", 
-        width = 10,
-        background = "red",
-        actionButton("logscale", "log"),
-        withSpinner(plotOutput('age_inf',width = "1150px", height = "250px"))
-      )),
-                                                                                              
+    # previous second panel
+    # fluidRow(
+    #   box(
+    #     title = "", 
+    #     width = 10,
+    #     background = "red",
+    #     actionButton("logscale", "log"),
+    #     withSpinner(plotOutput('age_inf',width = "1150px", height = "250px"))
+    #   )),
+    #                                                                                           
+    
+    fluidRow(splitLayout(cellWidths = c("50%", "50%"),withSpinner(plotlyOutput('age_inf_plotly',width = "600px", height = "500px")))),
     
     # fluidRow(splitLayout(cellWidths = c("90%", "10%"),withSpinner(plotOutput('age_inf',width = "1150px", height = "250px")),
     #                      actionButton("logscale", "log"))),
@@ -222,6 +224,8 @@ shinyUI(pageWithSidebar(
                 
     
     fluidRow(withSpinner(plotOutput('age_dead',width = "1150px", height = "250px"))),
+    
+    
     
     
    

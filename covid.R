@@ -438,7 +438,9 @@ posfun <- function(t, y, parms){
   })
 }
 
-ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_matrix_features,time,R0,cmat_before_measures,cmat_after_measures,vaccination,agreed_vac_percent,gap,delay_measures){
+ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_matrix_features,
+                         time,R0,cmat_before_measures,cmat_after_measures,vaccination,
+                         agreed_vac_percent,gap,delay_measures){
   
   pop_a1<-init_pop[1]
   pop_a2<-init_pop[2]
@@ -862,6 +864,49 @@ plot_age_inf_log<-function(data){
   #                                                                                                color = 'darkred',width = 3)
   # p1
 }
+
+plot_age_inf_plotly<-function(data){
+  p <- plot_ly(data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+    layout( xaxis = list(title = "Days"),
+               yaxis = list (title = "Daily incidences")) %>%
+    add_trace(x = ~time, y = ~a1_inf, name = '0-18') %>%
+    add_trace(x = ~time, y = ~a2_inf, name = '18-40')%>%
+    add_trace(x = ~time, y = ~a3_inf, name = '40-60')%>%
+    add_trace(x = ~time, y = ~a4_inf, name = '60+')
+  
+  ay <- list(
+    tickfont = list(color = 'rgb(22, 96, 167)'),
+    overlaying = "y",
+    side = "right",
+    title = "Seasonality")
+  
+  p <- p %>% add_trace(x = ~time, y = ~seasonality, name = 'Seasonality', yaxis = "y2",type = 'scatter', 
+                       mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'))
+  
+  p <- p %>% layout(
+    title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 100, y = 1),
+    updatemenus = list(
+      list(
+        type = "buttons",
+        direction = "right",
+          xanchor = 'center',
+          yanchor = "top",
+          # pad = list('r'= 0, 't'= 10, 'b' = 0),
+          x = 0.5,
+          y = 1.27,
+          buttons = list(
+            list(method = "update",args = list(list("visible", c(T,T,T,T,T)),list(yaxis = list(type = "linear",title = "Daily incidences"))),
+                 label = "Linear"),
+            list(method = "update",args = list(list("visible", c(T,T,T,T,T)),list(yaxis = list(type = "log",title = "Daily incidences"))),
+                 label = "Log")
+          )
+        )
+    )
+  )
+  p
+  
+}
+
 
 plot_age_dead<-function(data){
   
