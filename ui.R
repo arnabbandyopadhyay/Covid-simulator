@@ -103,6 +103,7 @@ shinyUI(pageWithSidebar(
                                               selected = opt_location))
                         ),
                 tabPanel("Model parameters",
+                         
                          airDatepickerInput('date_range','Period',range = TRUE, value=c(Sys.Date(), Sys.Date()+180),view = "months"),
                          checkboxInput('seasonality','Seasonality',value = FALSE),
                          conditionalPanel(condition='input.seasonality == true',
@@ -115,14 +116,14 @@ shinyUI(pageWithSidebar(
                          # uiOutput('age_2_vaccinated'),
                          # uiOutput('age_3_vaccinated'),
                          # uiOutput('age_4_vaccinated')),
-                         checkboxInput("preexisting_memory", h4(HTML("Pre-existing immune memory/ <br/> vaccinated population",value=TRUE))),
+                         checkboxInput("preexisting_memory", h5(HTML("<b>Pre-existing immune memory/ <br/> vaccinated population</b>"))),
                          conditionalPanel(condition='input.preexisting_memory==true',
-                                          sliderInput('age_2_pre_vaccinated','18-40 already vaccinated',min=0,max=90,value=0),
-                                          sliderInput('age_3_pre_vaccinated','40-60 already vaccinated',min=0,max=90,value=0),
-                                          sliderInput('age_4_pre_vaccinated','60+ already vaccinated',min=0,max=90,value=0))),
-                                          # uiOutput('age_2_vaccinated'),
-                                          # uiOutput('age_3_vaccinated'),
-                                          # uiOutput('age_4_vaccinated'))),
+                                          # sliderInput('age_2_pre_vaccinated','18-40 already vaccinated',min=0,max=90,value=0),
+                                          # sliderInput('age_3_pre_vaccinated','40-60 already vaccinated',min=0,max=90,value=0),
+                                          # sliderInput('age_4_pre_vaccinated','60+ already vaccinated',min=0,max=90,value=0))),
+                                          uiOutput('age_2_vaccinated'),
+                                          uiOutput('age_3_vaccinated'),
+                                          uiOutput('age_4_vaccinated'))),
 
                 tabPanel("Vaccination",
                          helpText(h3('First Vaccination',style='color:#000000;')),
@@ -152,13 +153,21 @@ shinyUI(pageWithSidebar(
                          checkboxInput("bool_apply_measures","Apply Measures"),
                                        conditionalPanel(
                                          condition = "input.bool_physical_distancing == true && input.bool_apply_measures == true",
-                                         sliderInput("measures_start","Apply measures after (in months)",min=0,max=12,value=1),
+                                         # sliderInput("measures_start","Apply measures after (in months)",min=0,max=12,value=1),
+                                         uiOutput('home_measures_start'),
+                                         uiOutput('work_measures_start'),
+                                         uiOutput('school_measures_start'),
+                                         uiOutput('transport_measures_start'),
+                                         uiOutput('leisure_measures_start'),
+                                         uiOutput('other_measures_start'),
                                          sliderInput("cnt_reduction_home","Reduce 'home' contacts (%)",min=0,max=100,value=0),
                                          sliderInput("cnt_reduction_work","Reduce 'work' contacts (%)",min=0,max=100,value=0),
                                          sliderInput("cnt_reduction_school","Reduce 'school' contacts (%)",min=0,max=100,value=0),
                                          sliderInput("cnt_reduction_transport","Reduce 'transport' contacts (%)",min=0,max=100,value=0),
-                                         sliderInput("cnt_reduction_leisure","Reduce 'lesiure' contacts (%)",min=0,max=100,value=0),
+                                         sliderInput("cnt_reduction_leisure","Reduce 'leisure' contacts (%)",min=0,max=100,value=0),
                                          sliderInput("cnt_reduction_otherplace","Reduce 'otherplace' contacts (%)",min=0,max=100,value=0))
+                                         
+                                         
                          )
                 # tabPanel("Transmission",checkboxInput("bool_transmission_param", "Age-specific transmission",value = FALSE),
                 #                         conditionalPanel(
@@ -193,7 +202,7 @@ shinyUI(pageWithSidebar(
     
     # allways show matrix with contact rates
     fluidRow(splitLayout(cellWidths = c("40%", "30%","30%"),withSpinner(plotOutput('plot_cnt_matrix',width = "450px", height = "300px")),
-                         withSpinner(rbokehOutput('tot_inf',width = "350px", height = "350px")),
+                         withSpinner(plotOutput('tot_inf',width = "350px", height = "350px")),
                          withSpinner(rbokehOutput('tot_dead',width = "350px", height = "350px")))),
     
     # previous second panel

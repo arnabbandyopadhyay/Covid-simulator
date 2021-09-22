@@ -523,15 +523,20 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   for (simtime in 1:time){
     
     
-    if (simtime >(delay_measures*30)){
-      for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_after_measures[i])}
+    # if (simtime >(delay_measures*30)){
+    #   # for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_after_measures[i])}
+    #   
+    # 
+    # }
+    # else {
+    #   for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
+    # }
+
+    # for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
+    
+    if (simtime %in% delay_measures$Delay){
       
     }
-    else {
-      for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
-    }
-    
-    
     
     r1_a1<-r1_a2<-r1_a3<-r1_a4<-R1*seasonality[simtime]
     
@@ -721,37 +726,37 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
 }
 
 
-plot_tot_inf<-function(data, start_day,end_day){
+plot_tot_inf<-function(data){
 
   colnames(data)<-c('Days','0-18 daily incidences','18-40 daily incidences',
                     '40-60 daily incidences','60+ daily incidences', 'Incidences',
-                    '0-18 daily deaths','18-40 daily deaths','40-60 daily deaths','60+ daily deaths','Total daily deaths')
-  data$Day<-seq(as.Date(start_day)+1, as.Date(end_day), "days")
+                    '0-18 daily deaths','18-40 daily deaths','40-60 daily deaths','60+ daily deaths','Total daily deaths','Day')
+  # data$Day<-seq(as.Date(start_day)+1, as.Date(end_day), "days")
   
   new_data<-data[,c("Day","Incidences")]
   
-  # p1<-plot_ly(data = new_data, x = ~Days, y = ~Incidences,mode = 'lines',line=list(color = 'rgb(0,100,0)', width = 4))%>%
-  #             layout(xaxis = list(title = list(text ='<b>Days</b>', font = list(size=14,color='black'))),
-  #             yaxis = list(title = list(text='Daily total incidences',font=list(size=14,color='black'))))
-  
-  # p1<-ggplot(data, mapping=aes(x=Days))+
-  #   geom_line(aes(y=Incidences),color='darkgreen',size=1.5)+
-  #   scale_y_sqrt(breaks = function(x) { pretty(c(min(x)/5,seq(min(x),max(x),100))) } ) +xlab("Days")+ylab("Total Daily Incidences")+
-  #   theme(axis.text=element_text(size=16),axis.title=element_text(size=16,face="bold"))
-  
-  p1 <- figure(width=600, height=450) %>% ly_points(Day, Incidences, data = new_data,
-              color = 'white',
-              hover = list(Day, Incidences)) %>% ly_lines(Day, Incidences, data = new_data,
-                                                            color = 'darkgreen',width = 3) %>%
-    theme_axis(c("y"),axis_label_text_color = "black", axis_label_text_font_size = "12pt",
-               major_label_text_font_size = "12pt",
-               major_label_text_color = "black"
-               )%>%
-    theme_axis(c("x"),major_label_orientation = 45,axis_label_text_alpha = 0,
-               major_label_text_font_size = "12pt",
-               major_label_text_color = "black"
-               )
-    
+   p1<-plot_ly(data = new_data, x = ~Days, y = ~Incidences,mode = 'lines',line=list(color = 'rgb(0,100,0)', width = 4))%>%
+               layout(xaxis = list(title = list(text ='<b>Days</b>', font = list(size=14,color='black'))),
+               yaxis = list(title = list(text='Daily total incidences',font=list(size=14,color='black'))))
+
+   p1<-ggplot(data, mapping=aes(x=Days))+
+     geom_line(aes(y=Incidences),color='darkgreen',size=1.5)+
+     scale_y_sqrt(breaks = function(x) { pretty(c(min(x)/5,seq(min(x),max(x),100))) } ) +xlab("Days")+ylab("Total Daily Incidences")+
+     theme(axis.text=element_text(size=16),axis.title=element_text(size=16,face="bold"))
+
+  # p1 <- figure(width=600, height=450) %>% ly_points(Day, Incidences, data = new_data,
+  #             color = 'white',
+  #             hover = list(Day, Incidences)) %>% ly_lines(Day, Incidences, data = new_data,
+  #                                                           color = 'darkgreen',width = 3) %>%
+  #   theme_axis(c("y"),axis_label_text_color = "black", axis_label_text_font_size = "12pt",
+  #              major_label_text_font_size = "12pt",
+  #              major_label_text_color = "black"
+  #              )%>%
+  #   theme_axis(c("x"),major_label_orientation = 45,axis_label_text_alpha = 0,
+  #              major_label_text_font_size = "12pt",
+  #              major_label_text_color = "black"
+  #              )
+  #   
   p1
   
   # p <- figure() %>%ly_points(Sepal.Length, Sepal.Width, data = iris,

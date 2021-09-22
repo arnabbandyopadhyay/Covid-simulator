@@ -20,34 +20,56 @@ shinyServer(function(input, output, session) {
     hideTab(inputId = "tabs_results", target = "About CoMix")    
   }
   
-  # # already vaccinated
-  # 
-  # output$age_2_vaccinated<-renderUI({
-  #   sliderInput('age_2_pre_vaccinated','18-40 already vaccinated',min=0,max=input$age_2_vac_agreed,value=10)
-  # })
-  # 
-  # output$age_3_vaccinated<-renderUI({
-  #   sliderInput('age_3_pre_vaccinated','40-60 already vaccinated',min=0,max=input$age_3_vac_agreed,value=10)
-  # })
-  # 
-  # output$age_4_vaccinated<-renderUI({
-  #   sliderInput('age_4_pre_vaccinated','60+ already vaccinated',min=0,max=input$age_4_vac_agreed,value=10)
-  # })
+  # already vaccinated
 
+  output$age_2_vaccinated<-renderUI({
+    sliderInput('age_2_pre_vaccinated','18-40 already vaccinated',min=0,max=input$age_2_vac_agreed,value=10)
+  })
+
+  output$age_3_vaccinated<-renderUI({
+    sliderInput('age_3_pre_vaccinated','40-60 already vaccinated',min=0,max=input$age_3_vac_agreed,value=10)
+  })
+
+  output$age_4_vaccinated<-renderUI({
+    sliderInput('age_4_pre_vaccinated','60+ already vaccinated',min=0,max=input$age_4_vac_agreed,value=10)
+  })
+
+  
+  output$home_measures_start<-renderUI({
+    sliderInput('home_measures_start','Apply Home measures after (in Days)',min=0,max=as.numeric(input$date_range[2]-input$date_range[1]),value=0)
+  })
+  output$work_measures_start<-renderUI({
+    sliderInput('work_measures_start','Apply Work measures after (in Days)',min=0,max=as.numeric(input$date_range[2]-input$date_range[1]),value=0)
+  })
+  output$school_measures_start<-renderUI({
+    sliderInput('school_measures_start','Apply School measures after (in Days)',min=0,max=as.numeric(input$date_range[2]-input$date_range[1]),value=0)
+  })
+  output$transport_measures_start<-renderUI({
+    sliderInput('transport_measures_start','Apply Transport measures after (in Days)',min=0,max=as.numeric(input$date_range[2]-input$date_range[1]),value=0)
+  })
+  output$leisure_measures_start<-renderUI({
+    sliderInput('leisure_measures_start','Apply leisure measures after (in Days)',min=0,max=as.numeric(input$date_range[2]-input$date_range[1]),value=0)
+  })
+  output$other_measures_start<-renderUI({
+    sliderInput('other_measures_start','Apply Other measures after (in Days)',min=0,max=as.numeric(input$date_range[2]-input$date_range[1]),value=0)
+  })
+  
+ 
+  
   ## Wave input ----
   ## list to store reactive values
   values <- reactiveValues()
   
-  observeEvent(input$date_range[1], {
-    if (is.null(input$date_range[2])){
-      input$date_range[2]<-input$date_range[1]+180
-    }
-    # # If end date is earlier than start date, update the end date to be the same as the new start date
-    # if (input$date_range[2] < input$date_range[1]) {
-    #   end_date = input$date_range[1]
-    # }
-    updateDateRangeInput(session,"date_range", start=input$date_range[1], end=input$date_range[2], min=input$date_range[1] )
-  })
+  # observeEvent(input$date_range[1], {
+  #   if (is.null(input$date_range[2])){
+  #     input$date_range[2]<-input$date_range[1]+180
+  #   }
+  #   # # If end date is earlier than start date, update the end date to be the same as the new start date
+  #   # if (input$date_range[2] < input$date_range[1]) {
+  #   #   end_date = input$date_range[1]
+  #   # }
+  #   updateDateRangeInput(session,"date_range", start=input$date_range[1], end=input$date_range[2], min=input$date_range[1] )
+  # })
 
   # The dynamic input definition
   output$dynamicWaveInput <- renderUI({
@@ -325,20 +347,104 @@ shinyServer(function(input, output, session) {
     
     agreed_vac_percent<-c(input$age_2_vac_agreed,input$age_3_vac_agreed,input$age_4_vac_agreed)/100
     
+   
+    
+    ### contact reduction tracing
+    if (!is.null(input$home_measures_start)){
+      delay<-c(input$home_measures_start,
+               input$work_measures_start,
+               input$school_measures_start,
+               input$transport_measures_start,
+               input$leisure_measures_start,
+               input$other_measures_start)
+      
+      measures<-data.frame(location=c('Home','Work','School','Transport','Leisure','Otherplace'),
+                           value=c(input$cnt_reduction_home/100,
+                                   input$cnt_reduction_work/100,
+                                   input$cnt_reduction_school/100,
+                                   input$cnt_reduction_transport/100,
+                                   input$cnt_reduction_leisure/100,
+                                   input$cnt_reduction_otherplace/100),
+                           delay=delay)
+      
+      
+      
+      
+      measures<-measures[order(delay),]
+      measures<-measures[which(!measures$value==0),]
+      seq1<-unique(measures$delay)
+      
+      soe<-sapply(1:length(seq1), function (x) measures[which(measures$delay==seq1[x]),1])
+      
+      print(soe)
+      
+      m_location<-sapply(1:length(soe), function(x) paste(soe[[x]], collapse ='-'))
+      
+      cnt_reduction_sequence<-NULL
+      
+      for (i in 1:length(soe)){
+        cnt_reduction_dummy <- data.frame(Home       = 0,
+                                          Work       = 0,
+                                          School     = 0,
+                                          Transport  = 0,
+                                          Leisure    = 0,
+                                          Otherplace = 0)
+        for (j in 1:length(soe[[i]])){
+          
+          cnt_reduction_dummy[1,colnames(cnt_reduction_dummy)==soe[[i]][j]]<-measures[measures$location==soe[[i]][j],2]
+          
+        }
+        cnt_reduction_sequence<-rbind(cnt_reduction_sequence,cnt_reduction_dummy)
+        
+        
+        
+        
+      }
+      print(cnt_reduction_sequence)
+      cnt_reduction_sequence<-cumsum(cnt_reduction_sequence)
+      cnt_reduction_sequence$Delay<-seq1
+      cnt_reduction_sequence$Flag<-m_location
+      
+      print(cnt_reduction_sequence)
+      
+      measures_mat<-sapply(1:dim(cnt_reduction_sequence)[1], function (x) run_social_contact_analysis(country      = input$country,
+                                                                                                      daytype      = input$daytype,
+                                                                                                      touch        = input$touch,
+                                                                                                      duration     = input$duration,
+                                                                                                      gender       = input$gender,
+                                                                                                      cnt_location = input$cnt_location,
+                                                                                                      cnt_matrix_features = opt_matrix_features[features_select],
+                                                                                                      age_breaks_text     = opt_age_breaks,
+                                                                                                      weight_threshold     = weight_threshold,
+                                                                                                      bool_transmission_param = FALSE, # input$bool_transmission_param,
+                                                                                                      age_susceptibility_text = age_susceptibility_text,
+                                                                                                      age_infectiousness_text = age_infectiousness_text,
+                                                                                                      cnt_reduction           = cnt_reduction_sequence[x,c(1:6)],
+                                                                                                      wave                    = values$w_dynamic)
+      )
+      
+      print(measures_mat[1,])
+      
+      
+    }
+    
+    
+    
     # measures
     
-
     
     if (input$bool_physical_distancing == TRUE && input$bool_apply_measures == TRUE){
       cmat_before_measures=out_no_measures$matrix
-      cmat_after_measures=out$matrix
-      delay_measures=input$measures_start
+      cmat_after_measures=measures_mat
+      delay_measures=cnt_reduction_sequence
+      # cmat_after_measures=out$matrix
+      # delay_measures=input$measures_start
     }
     else {
       cmat_before_measures=out_no_measures$matrix
       cmat_after_measures=out_no_measures$matrix
       delay_measures=Inf
-      }
+    }
     
     # ode data
     # init_cond<-init_cond_fn(input$country,values$a,values$b,values$c)
@@ -438,8 +544,7 @@ shinyServer(function(input, output, session) {
                        vaccination=vaccination,agreed_vac_percent=agreed_vac_percent,gap=gap, delay_measures=delay_measures)
    
       
-    
-    
+   
       # print(dy_data())
       # print(c(values$a,values$b,values$c))
   
@@ -453,12 +558,16 @@ shinyServer(function(input, output, session) {
     #                       cmat_before_measures = cmat_before_measures, cmat_after_measures = cmat_after_measures,
     #                       vaccination=vaccination,agreed_vac_percent=agreed_vac_percent,gap=gap, delay_measures=delay_measures)
 
-    output$tot_inf <- renderRbokeh({
-     
-        plot_tot_inf(dy_data,input$date_range[1],input$date_range[2])
+    
+    
+    output$tot_inf <- renderPlot({
+      
+      dy_data$Day<-seq.Date(as.Date(input$date_range[1])+1, as.Date(input$date_range[2]), "days")
+      print(head(dy_data))
+      plot_tot_inf(dy_data)
       
       
-      })
+    })
 
     output$tot_dead <- renderRbokeh({
       plot_tot_dead(dy_data)
@@ -684,6 +793,9 @@ shinyServer(function(input, output, session) {
   }, ignoreNULL = FALSE)
   
   ######## end of observe event
+  
+  
+  
   observeEvent(input$reset, {
     lists_input<-names(input)
     for (i in 1:length(names(input))){
