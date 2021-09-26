@@ -369,64 +369,90 @@ shinyServer(function(input, output, session) {
       
       
       
-      
+      print(measures)
       measures<-measures[order(delay),]
       measures<-measures[which(!measures$value==0),]
-      seq1<-unique(measures$delay)
       
-      soe<-sapply(1:length(seq1), function (x) measures[which(measures$delay==seq1[x]),1])
-      
-      print(soe)
-      
-      m_location<-sapply(1:length(soe), function(x) paste(soe[[x]], collapse ='-'))
-      
-      cnt_reduction_sequence<-NULL
-      
-      for (i in 1:length(soe)){
-        cnt_reduction_dummy <- data.frame(Home       = 0,
-                                          Work       = 0,
-                                          School     = 0,
-                                          Transport  = 0,
-                                          Leisure    = 0,
-                                          Otherplace = 0)
-        for (j in 1:length(soe[[i]])){
-          
-          cnt_reduction_dummy[1,colnames(cnt_reduction_dummy)==soe[[i]][j]]<-measures[measures$location==soe[[i]][j],2]
+      if (nrow(measures)==0){
+        
+        measures_mat=sapply(1, function (x) out_no_measures)
+        cnt_reduction_sequence<-data.frame(Delay=Inf)
+        
+      }
+      else {
+        
+        seq1<-unique(measures$delay)
+        print(seq1)
+        soe<-sapply(1:length(seq1), function (x) measures[which(measures$delay==seq1[x]),1])
+        
+        print(soe)
+        
+        if (length(seq1)==1){
+          m_location<-paste(soe, collapse ='-')
+          ss<-list()
+          ss[[1]]<-as.vector(soe)
+          soe<-ss
           
         }
-        cnt_reduction_sequence<-rbind(cnt_reduction_sequence,cnt_reduction_dummy)
+        else {
+          m_location<-sapply(1:length(soe), function(x) paste(soe[[x]], collapse ='-'))
+        }
         
         
+        print(m_location)
+        
+        cnt_reduction_sequence<-NULL
+        
+        for (i in 1:length(soe)){
+          cnt_reduction_dummy <- data.frame(Home       = 0,
+                                            Work       = 0,
+                                            School     = 0,
+                                            Transport  = 0,
+                                            Leisure    = 0,
+                                            Otherplace = 0)
+          for (j in 1:length(soe[[i]])){
+            
+            cnt_reduction_dummy[1,colnames(cnt_reduction_dummy)==soe[[i]][j]]<-measures[measures$location==soe[[i]][j],2]
+            
+          }
+          cnt_reduction_sequence<-rbind(cnt_reduction_sequence,cnt_reduction_dummy)
+          
+          
+          
+          
+        }
+        print(cnt_reduction_sequence)
+        cnt_reduction_sequence<-cumsum(cnt_reduction_sequence)
+        cnt_reduction_sequence$Delay<-seq1
+        cnt_reduction_sequence$Flag<-m_location
+        
+        print(cnt_reduction_sequence)
+        
+        measures_mat<-sapply(1:dim(cnt_reduction_sequence)[1], function (x) run_social_contact_analysis(country      = input$country,
+                                                                                                        daytype      = input$daytype,
+                                                                                                        touch        = input$touch,
+                                                                                                        duration     = input$duration,
+                                                                                                        gender       = input$gender,
+                                                                                                        cnt_location = input$cnt_location,
+                                                                                                        cnt_matrix_features = opt_matrix_features[features_select],
+                                                                                                        age_breaks_text     = opt_age_breaks,
+                                                                                                        weight_threshold     = weight_threshold,
+                                                                                                        bool_transmission_param = FALSE, # input$bool_transmission_param,
+                                                                                                        age_susceptibility_text = age_susceptibility_text,
+                                                                                                        age_infectiousness_text = age_infectiousness_text,
+                                                                                                        cnt_reduction           = cnt_reduction_sequence[x,c(1:6)],
+                                                                                                        wave                    = values$w_dynamic)
+        )
+        
+        print(measures_mat[1,])
         
         
       }
-      print(cnt_reduction_sequence)
-      cnt_reduction_sequence<-cumsum(cnt_reduction_sequence)
-      cnt_reduction_sequence$Delay<-seq1
-      cnt_reduction_sequence$Flag<-m_location
-      
-      print(cnt_reduction_sequence)
-      
-      measures_mat<-sapply(1:dim(cnt_reduction_sequence)[1], function (x) run_social_contact_analysis(country      = input$country,
-                                                                                                      daytype      = input$daytype,
-                                                                                                      touch        = input$touch,
-                                                                                                      duration     = input$duration,
-                                                                                                      gender       = input$gender,
-                                                                                                      cnt_location = input$cnt_location,
-                                                                                                      cnt_matrix_features = opt_matrix_features[features_select],
-                                                                                                      age_breaks_text     = opt_age_breaks,
-                                                                                                      weight_threshold     = weight_threshold,
-                                                                                                      bool_transmission_param = FALSE, # input$bool_transmission_param,
-                                                                                                      age_susceptibility_text = age_susceptibility_text,
-                                                                                                      age_infectiousness_text = age_infectiousness_text,
-                                                                                                      cnt_reduction           = cnt_reduction_sequence[x,c(1:6)],
-                                                                                                      wave                    = values$w_dynamic)
-      )
-      
-      print(measures_mat[1,])
+        
+      }
       
       
-    }
+      
     
     
     
@@ -435,22 +461,29 @@ shinyServer(function(input, output, session) {
     
     if (input$bool_physical_distancing == TRUE && input$bool_apply_measures == TRUE){
       cmat_before_measures=out_no_measures$matrix
-      cmat_after_measures=measures_mat
+      cmat_after_measures=measures_mat[1,]
       delay_measures=cnt_reduction_sequence
       # cmat_after_measures=out$matrix
       # delay_measures=input$measures_start
+      apply_measures='on'
+      
+      # print(cmat_after_measures)
+      # print(cmat_after_measures[[which(delay_measures$Delay==delay_measures$Delay[3])]])
+      # 
+      
+      
     }
     else {
       cmat_before_measures=out_no_measures$matrix
       cmat_after_measures=out_no_measures$matrix
-      delay_measures=Inf
+      delay_measures=data.frame(Delay=Inf)
+      apply_measures='off'
     }
     
     # ode data
     # init_cond<-init_cond_fn(input$country,values$a,values$b,values$c)
     # print(init_cond)
     
-
     
     age_ratio<-unlist(demography[input$country == rownames(demography),7:10],use.names = FALSE)
     print(age_ratio)
@@ -541,7 +574,8 @@ shinyServer(function(input, output, session) {
     dy_data<-ode_dynamics(country=input$country,init_cond=init_cond,init_pop=init_pop,seasonality=seasonal_factor,
                           age_ratio=age_ratio,cnt_matrix_features=opt_matrix_features[features_select],time=sim_time,R0=input$R0,
                        cmat_before_measures = cmat_before_measures, cmat_after_measures = cmat_after_measures,
-                       vaccination=vaccination,agreed_vac_percent=agreed_vac_percent,gap=gap, delay_measures=delay_measures)
+                       vaccination=vaccination,agreed_vac_percent=agreed_vac_percent,gap=gap, 
+                       delay_measures=delay_measures,apply_measures=apply_measures)
    
       
    
@@ -594,56 +628,142 @@ shinyServer(function(input, output, session) {
       sz=dim(dy_data)[1]
       dy_data$seasonality<-seasonal_factor[1:sz]
       
-      plot_age_inf_plotly(dy_data)
+      dy_data$Day<-seq.Date(as.Date(input$date_range[1])+1, as.Date(input$date_range[2]), "days")
+      t<-list(size=20,
+              color='black')
       
-      # # chart option buttons
-      # scale_axis <- list(
-      #   type = "buttons",
-      #   direction = "right",
-      #   xanchor = 'center',
-      #   yanchor = "top",
-      #   pad = list('r'= 0, 't'= 10, 'b' = 10),
-      #   x = 0.5,
-      #   y = 1.27,
-      #   buttons = list(
-      #     
-      #     list(method = "restyle",
-      #          args = list("type", "linear"),
-      #          label = "Linear"),
-      #     
-      #     list(method = "restyle",
-      #          args = list("type", "log"),
-      #          label = "log")
-      #     
-      #   ))
-      # 
-      # # color option buttons  
-      # plot_types <- list(
-      #   type = "buttons",
-      #   direction = "right",
-      #   xanchor = 'center',
-      #   yanchor = "top",
-      #   pad = list('r'= 0, 't'= 10, 'b' = 10),
-      #   x = 0.5,
-      #   y = 1.,
-      #   buttons = list(
-      #     
-      #     list(method = "restyle",
-      #          args = list("colorscale", "Rainbow"),
-      #          label = "Rainbow"),
-      #     
-      #     list(method = "restyle",
-      #          args = list("colorscale", "Jet"),
-      #          label = "Jet"),
-      #     
-      #     list(method = "restyle",
-      #          args = list("colorscale", "Earth"),
-      #          label = "Earth"),
-      #     
-      #     list(method = "restyle",
-      #          args = list("colorscale", "Electric"),
-      #          label = "Electric")
-      #   ))
+      p <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+        layout( xaxis = list(title = list(text="<b>",font=t), tickangle=-45,tickfont=list(size=20), zerolinewidth=2),
+                yaxis = list (title = list(text="<b>Daily incidences",font=t), rangemode='tozero', tickfont=list(size=20))) %>%
+        add_trace(x = ~Day, y = ~a1_inf, name = '<b>0-18', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>0-18 Incidences: ',round(a1_inf))) %>%
+        add_trace(x = ~Day, y = ~a2_inf, name = '<b>18-40', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>18-40 Incidences: ',round(a2_inf)))%>%
+        add_trace(x = ~Day, y = ~a3_inf, name = '<b>40-60', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>40-60 Incidences: ',round(a3_inf)))%>%
+        add_trace(x = ~Day, y = ~a4_inf, name = '<b>60+', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>60+ Incidences: ',round(a4_inf)))
+      
+      
+      ay <- list(
+        tickfont = list(color = 'rgb(22, 96, 167)',size=20),
+        overlaying = "y",
+        side = "right",
+        # rangemode='tozero',
+        title = list(text="<b>Seasonality",font=t))
+      
+      p <- p %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
+                           mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'),
+                           hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Seasonality: ',seasonality))
+      
+      visible_list<-c(T,T,T,T,T)
+      
+      if (apply_measures=='on'){
+        
+        
+        
+        color_list<-c('#b7961e','#1e8cb7','#e04265',
+                      # '#961eb7',
+                      '#1eb796','#b74a1e','#6e42e0')
+        # color_list<-c('rgb(0,53,152)','rgb(0,23,152)','rgb(0,53,172)','rgb(0,90,95)','rgb(0,20,25)','rgb(0,55,100)')
+        f_color_list<-c('rgba(183,150,30,0.3)','rgba(30,140,183,0.3)','rgba(224,66,101,0.3)',
+                        # 'rgba(150,30,183,0.2)',
+                        'rgba(30,183,150,0.3)','rgba(183,74,30,0.3)','rgba(110,66,224,0.3)')
+        m_inf<-max(dy_data[,c('a1_inf','a2_inf','a3_inf','a4_inf')])
+        y1l<-m_inf/3 #+m_inf/4
+        text<-delay_measures$Flag
+        x_box<-data.frame(x=c(as.Date(input$date_range[1]+delay_measures$Delay),as.Date(input$date_range[2])),y=rep(y1l,(length(text)+1)),
+                          Flag=c(delay_measures$Flag,'NULL'))
+        
+        print(x_box)
+        print(delay_measures)
+        
+        
+        
+        for (i in 1:length(delay_measures$Delay)){
+          visible_list<-c(visible_list,'T')
+          
+          print(paste('<br>',unlist(strsplit(as.character(x_box$Flag[1:i]),'-')),
+                      unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'))
+          
+          print(unlist(strsplit(as.character(x_box$Flag[i]),'-')))
+          
+          p<-p %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
+                             fillcolor = f_color_list[i],
+                             hoveron = 'fills',
+                             marker = list(
+                               color = f_color_list[i]
+                             ),
+                             line = list(
+                               color = f_color_list[i]
+                             ),
+                             text = paste(paste(paste(x_box$Flag[1:i],collapse = '-'),'contact reduction' ), '<br>Start Date: ', x_box$x[i],
+                                          paste(paste('<br>',unlist(strsplit(as.character(x_box$Flag[1:i]),'-')),
+                                                unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'),collapse = ',')),
+                                  
+                             hoverinfo = 'text',showlegend = F)
+                             
+                             
+                             # type='scatter',mode='lines',split=~y,
+                             # line=list(color=color_list[i]),opacity = 0.3,showlegend = F)
+          
+          # p<-p %>% add_trace(data=x_box[c(i,(i+1)),],x=~x,y=~y,type='scatter',mode='lines',split=~y,
+          #                    line=list(color=color_list[i]),opacity = 0.3,showlegend = F) %>%
+          #   add_trace(data=x_box[c(i,(i+1)),],x=~x,y=0,type='scatter',
+          #             mode='lines',split=~y,line=list(color=color_list[i]),opacity = 0.3,
+          #             fill = 'tonexty', fillcolor=f_color_list[i],showlegend = F,
+          #             hoverinfo='text',hoveron = 'fills',
+          #             marker = list(
+          #               color = f_color_list[i]
+          #             ),
+          #             line = list(
+          #               color = f_color_list[i]
+          #             ),
+          #             text = "Points + Fills")
+                      
+                      
+                      # text=~paste(Flag[i],'contact reduction' )) %>%
+            # add_trace(data=x_box[i,],x=~x,y=~y/2,type='scatter',mode = 'text', text = ~Flag[i], textangle = 90, textposition = 'bottom left',
+            #           textfont = list(color = '#000000', size = 16,showlegend = F))
+          # p<-p %>% layout(plot_bgcolor = "", shapes = list(list(type = "rect", text = text[i], fillcolor = color_list[i], line = list(color = color_list[i]),
+          #                                                       opacity = 0.2, y0 = 0, y1 = y1l, x0 = x_box[i] , x1 = x_box[i+1])))
+          
+          
+        }
+        
+        
+      }
+      
+      p <- p %>% layout(
+        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=20)),
+        hovermode='x unified',
+        hoverlabel=list(font=list(size=14)),
+        updatemenus = list(
+          list(
+            type = "buttons",
+            direction = "right",
+            xanchor = 'center',
+            yanchor = "top",
+            # pad = list('r'= 0, 't'= 10, 'b' = 0),
+            x = 0.5,
+            y = 1.27,
+            # bgcolor='rgba(255,165,0,0.2)',
+            
+            font=list(size=16),
+            bordercolor='orange',
+            borderwidth=3,
+            buttons = list(
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+                   label = "Linear",bgcolor='rgba(255,165,0,0.2)'),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+                   label = "Log")
+            )
+          )
+        )
+      ) %>%config(displaylogo=FALSE)
+      
+      
+      
+      
+      
+      # plot_age_inf_plotly(dy_data)
+      
       
       
       
@@ -654,8 +774,116 @@ shinyServer(function(input, output, session) {
     #   plot_age_inf_log(dy_data)
     # })
     
-    output$age_dead <- renderPlot({
-      plot_age_dead(dy_data)
+    output$age_dead <- renderPlotly({
+      
+      
+      sz=dim(dy_data)[1]
+      dy_data$seasonality<-seasonal_factor[1:sz]
+      
+      dy_data$Day<-seq.Date(as.Date(input$date_range[1])+1, as.Date(input$date_range[2]), "days")
+      t<-list(size=20,
+              color='black')
+      
+      p <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+        layout( xaxis = list(title = list(text="<b>",font=t), tickangle=-45,tickfont=list(size=20), zerolinewidth=2),
+                yaxis = list (title = list(text="<b>Daily deaths",font=t), rangemode='tozero', tickfont=list(size=20))) %>%
+        add_trace(x = ~Day, y = ~a1_dead, name = '<b>0-18', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>0-18 Deaths: ',round(a1_dead))) %>%
+        add_trace(x = ~Day, y = ~a2_dead, name = '<b>18-40', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>18-40 Deaths: ',round(a2_dead)))%>%
+        add_trace(x = ~Day, y = ~a3_dead, name = '<b>40-60', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>40-60 Deaths: ',round(a3_dead)))%>%
+        add_trace(x = ~Day, y = ~a4_dead, name = '<b>60+', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>60+ Deaths: ',round(a4_dead)))
+      
+      
+      ay <- list(
+        tickfont = list(color = 'rgb(22, 96, 167)',size=20),
+        overlaying = "y",
+        side = "right",
+        # rangemode='tozero',
+        title = list(text="<b>Seasonality",font=t))
+      
+      p <- p %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
+                           mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'),
+                           hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Seasonality: ',seasonality))
+      
+      visible_list<-c(T,T,T,T,T)
+      
+      if (apply_measures=='on'){
+        
+        
+        
+        color_list<-c('#b7961e','#1e8cb7','#e04265',
+                      # '#961eb7',
+                      '#1eb796','#b74a1e','#6e42e0')
+        # color_list<-c('rgb(0,53,152)','rgb(0,23,152)','rgb(0,53,172)','rgb(0,90,95)','rgb(0,20,25)','rgb(0,55,100)')
+        f_color_list<-c('rgba(183,150,30,0.3)','rgba(30,140,183,0.3)','rgba(224,66,101,0.3)',
+                        # 'rgba(150,30,183,0.2)',
+                        'rgba(30,183,150,0.3)','rgba(183,74,30,0.3)','rgba(110,66,224,0.3)')
+        m_dead<-max(dy_data[,c('a1_dead','a2_dead','a3_dead','a4_dead')])
+        y1l<-m_dead/3 #+m_dead/4
+        text<-delay_measures$Flag
+        x_box<-data.frame(x=c(as.Date(input$date_range[1]+delay_measures$Delay),as.Date(input$date_range[2])),y=rep(y1l,(length(text)+1)),
+                          Flag=c(delay_measures$Flag,'NULL'))
+        
+        
+        
+        for (i in 1:length(delay_measures$Delay)){
+          visible_list<-c(visible_list,'T')
+          
+          print(paste('<br>',unlist(strsplit(as.character(x_box$Flag[1:i]),'-')),
+                      unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'))
+          
+          
+          p<-p %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
+                             fillcolor = f_color_list[i],
+                             hoveron = 'fills',
+                             marker = list(
+                               color = f_color_list[i]
+                             ),
+                             line = list(
+                               color = f_color_list[i]
+                             ),
+                             text = paste(paste(paste(x_box$Flag[1:i],collapse = '-'),'contact reduction' ), '<br>Start Date: ', x_box$x[i],
+                                          paste(paste('<br>',unlist(strsplit(as.character(x_box$Flag[1:i]),'-')),
+                                                      unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'),collapse = ',')),
+                             
+                             hoverinfo = 'text',showlegend = F)
+          
+          
+        }
+        
+        
+      }
+      
+      p <- p %>% layout(
+        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=20)),
+        hovermode='x unified',
+        hoverlabel=list(font=list(size=14)),
+        updatemenus = list(
+          list(
+            type = "buttons",
+            direction = "right",
+            xanchor = 'center',
+            yanchor = "top",
+            # pad = list('r'= 0, 't'= 10, 'b' = 0),
+            x = 0.5,
+            y = 1.27,
+            # bgcolor='rgba(255,165,0,0.2)',
+            
+            font=list(size=16),
+            bordercolor='orange',
+            borderwidth=3,
+            buttons = list(
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+                   label = "Linear",bgcolor='rgba(255,165,0,0.2)'),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+                   label = "Log")
+            )
+          )
+        )
+      ) %>%config(displaylogo=FALSE)
+      
+      
+      
+      # plot_age_dead(dy_data)
     })
     
     # output$tot_dead <- renderPlot({plot(ode_time,tot_dead)})

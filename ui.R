@@ -216,7 +216,7 @@ shinyUI(pageWithSidebar(
     #   )),
     #                                                                                           
     
-    fluidRow(splitLayout(cellWidths = c("50%", "50%"),withSpinner(plotlyOutput('age_inf_plotly',width = "600px", height = "500px")))),
+    fluidRow(splitLayout(cellWidths = c("100%"),withSpinner(plotlyOutput('age_inf_plotly',width = "1200px", height = "500px")))),
     
     # fluidRow(splitLayout(cellWidths = c("90%", "10%"),withSpinner(plotOutput('age_inf',width = "1150px", height = "250px")),
     #                      actionButton("logscale", "log"))),
@@ -232,7 +232,7 @@ shinyUI(pageWithSidebar(
     
                 
     
-    fluidRow(withSpinner(plotOutput('age_dead',width = "1150px", height = "250px"))),
+    fluidRow(withSpinner(plotlyOutput('age_dead',width = "1200px", height = "500px"))),
     
     
     

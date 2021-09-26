@@ -440,7 +440,7 @@ posfun <- function(t, y, parms){
 
 ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_matrix_features,
                          time,R0,cmat_before_measures,cmat_after_measures,vaccination,
-                         agreed_vac_percent,gap,delay_measures){
+                         agreed_vac_percent,gap,delay_measures,apply_measures){
   
   pop_a1<-init_pop[1]
   pop_a2<-init_pop[2]
@@ -518,16 +518,29 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   max_age_3_vac<-pop_a3*(1-agreed_vac_percent[2])
   max_age_4_vac<-pop_a4*(1-agreed_vac_percent[3])
   
-  
+  for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
   
   for (simtime in 1:time){
     
-    
-    # if (simtime >(delay_measures*30)){
-    #   # for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_after_measures[i])}
+    # if (apply_measures=='on'){
     #   
-    # 
+    #   
+    #   if (simtime %in% (delay_measures$Delay)){
+    #     print(simtime)
+    #     working_mat<-as.vector(t(cmat_after_measures[[which(delay_measures$Delay==simtime)]]))
+    #     print(working_mat)
+    #     for (i in 1:length(cm_pars)){assign(cm_pars[i],working_mat[i])}
+    #     print(zcm11)
+    #     
+    #     
+    #   }
     # }
+    # else {
+    #   for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
+    # }
+      
+      
+    
     # else {
     #   for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
     # }
@@ -871,45 +884,46 @@ plot_age_inf_log<-function(data){
 }
 
 plot_age_inf_plotly<-function(data){
-  p <- plot_ly(data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
-    layout( xaxis = list(title = "Days"),
-               yaxis = list (title = "Daily incidences")) %>%
-    add_trace(x = ~time, y = ~a1_inf, name = '0-18') %>%
-    add_trace(x = ~time, y = ~a2_inf, name = '18-40')%>%
-    add_trace(x = ~time, y = ~a3_inf, name = '40-60')%>%
-    add_trace(x = ~time, y = ~a4_inf, name = '60+')
-  
-  ay <- list(
-    tickfont = list(color = 'rgb(22, 96, 167)'),
-    overlaying = "y",
-    side = "right",
-    title = "Seasonality")
-  
-  p <- p %>% add_trace(x = ~time, y = ~seasonality, name = 'Seasonality', yaxis = "y2",type = 'scatter', 
-                       mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'))
-  
-  p <- p %>% layout(
-    title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 100, y = 1),
-    updatemenus = list(
-      list(
-        type = "buttons",
-        direction = "right",
-          xanchor = 'center',
-          yanchor = "top",
-          # pad = list('r'= 0, 't'= 10, 'b' = 0),
-          x = 0.5,
-          y = 1.27,
-          buttons = list(
-            list(method = "update",args = list(list("visible", c(T,T,T,T,T)),list(yaxis = list(type = "linear",title = "Daily incidences"))),
-                 label = "Linear"),
-            list(method = "update",args = list(list("visible", c(T,T,T,T,T)),list(yaxis = list(type = "log",title = "Daily incidences"))),
-                 label = "Log")
-          )
-        )
-    )
-  )
-  p
-  
+  # p <- plot_ly(data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+  #   layout( xaxis = list(title = "Days"),
+  #              yaxis = list (title = "Daily incidences")) %>%
+  #   add_trace(x = ~time, y = ~a1_inf, name = '0-18', hoverinfo='text', text=~paste('</br>Days: ',time,'</br>0-18 Incidences: ',round(a1_inf))) %>%
+  #   add_trace(x = ~time, y = ~a2_inf, name = '18-40', hoverinfo='text', text=~paste('</br>Days: ',time,'</br>18-40 Incidences: ',round(a2_inf)))%>%
+  #   add_trace(x = ~time, y = ~a3_inf, name = '40-60', hoverinfo='text', text=~paste('</br>Days: ',time,'</br>40-60 Incidences: ',round(a3_inf)))%>%
+  #   add_trace(x = ~time, y = ~a4_inf, name = '60+', hoverinfo='text', text=~paste('</br>Days: ',time,'</br>60+ Incidences: ',round(a4_inf)))
+  # 
+  # ay <- list(
+  #   tickfont = list(color = 'rgb(22, 96, 167)'),
+  #   overlaying = "y",
+  #   side = "right",
+  #   title = "Seasonality")
+  # 
+  # p <- p %>% add_trace(x = ~time, y = ~seasonality, name = 'Seasonality', yaxis = "y2",type = 'scatter', 
+  #                      mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'),
+  #                                                  hoverinfo='text', text=~paste('</br>Days: ',time,'</br>Seasonality: ',seasonality))
+  # 
+  # p <- p %>% layout(
+  #   title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 100, y = 1),
+  #   updatemenus = list(
+  #     list(
+  #       type = "buttons",
+  #       direction = "right",
+  #         xanchor = 'center',
+  #         yanchor = "top",
+  #         # pad = list('r'= 0, 't'= 10, 'b' = 0),
+  #         x = 0.5,
+  #         y = 1.27,
+  #         buttons = list(
+  #           list(method = "update",args = list(list("visible", c(T,T,T,T,T)),list(yaxis = list(type = "linear",title = "Daily incidences"))),
+  #                label = "Linear"),
+  #           list(method = "update",args = list(list("visible", c(T,T,T,T,T)),list(yaxis = list(type = "log",title = "Daily incidences"))),
+  #                label = "Log")
+  #         )
+  #       )
+  #   )
+  # )
+  # p
+  # 
 }
 
 
