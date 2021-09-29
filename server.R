@@ -216,7 +216,7 @@ shinyServer(function(input, output, session) {
  
   ## Update results ####
   
-  observeEvent(input$simulate,{
+  observeEvent(input$simulate, {
 
     progress <- Progress$new(session, min=1, max=15)
     on.exit(progress$close())
@@ -346,6 +346,8 @@ shinyServer(function(input, output, session) {
     gap<-input$gap
     
     agreed_vac_percent<-c(input$age_2_vac_agreed,input$age_3_vac_agreed,input$age_4_vac_agreed)/100
+    
+    vaccination_start<-input$vaccination_start
     
    
     
@@ -489,6 +491,8 @@ shinyServer(function(input, output, session) {
     print(age_ratio)
     
     
+    ### preexisting memory
+    
     if (input$preexisting_memory==TRUE){
       # imm<-c(input$age_2_pre_vaccinated/100,input$age_3_pre_vaccinated/100,input$age_4_pre_vaccinated/100)
       # init_cond<-init_cond_fn(input$country,imm[1],imm[2],imm[3])
@@ -515,25 +519,9 @@ shinyServer(function(input, output, session) {
     else{ 
       imm<-c(0,0,0)
       }
+  
+    ### custom city  
     
-    
-    print(imm)
-    
-    #   observe({
-    #   imm<-c(input$age_2_pre_vaccinated/100,input$age_3_pre_vaccinated/100,input$age_4_pre_vaccinated/100)
-    #   
-    #   
-    #   values$init_cond<-init_cond
-    #   
-    #   
-    # })
-    #   
-    #   
-    #   observe({
-    #     print(values$init_cond)
-    #   })
-    #   
-      
     if (input$custom_city){
       pop_custom<-c(input$custom_city_0_18,input$custom_city_18_40,input$custom_city_40_60,input$'custom_city_60+')
       init_cond<-init_cond_custom(pop_custom,imm[1],imm[2],imm[3])
@@ -574,7 +562,7 @@ shinyServer(function(input, output, session) {
     dy_data<-ode_dynamics(country=input$country,init_cond=init_cond,init_pop=init_pop,seasonality=seasonal_factor,
                           age_ratio=age_ratio,cnt_matrix_features=opt_matrix_features[features_select],time=sim_time,R0=input$R0,
                        cmat_before_measures = cmat_before_measures, cmat_after_measures = cmat_after_measures,
-                       vaccination=vaccination,agreed_vac_percent=agreed_vac_percent,gap=gap, 
+                       vaccination_start=vaccination_start, vaccination=vaccination,agreed_vac_percent=agreed_vac_percent,gap=gap, 
                        delay_measures=delay_measures,apply_measures=apply_measures)
    
       
@@ -594,19 +582,146 @@ shinyServer(function(input, output, session) {
 
     
     
-    output$tot_inf <- renderPlot({
-      
+    # output$tot_inf <- renderPlot({
+    #   
+    #   dy_data$Day<-seq.Date(as.Date(input$date_range[1])+1, as.Date(input$date_range[2]), "days")
+    #   print(head(dy_data))
+    #   plot_tot_inf(dy_data)
+    #   
+    #   
+    # })
+    # 
+    # output$tot_dead <- renderRbokeh({
+    #   plot_tot_dead(dy_data)
+    # })
+
+    
+    
+    
+    
+      sz=dim(dy_data)[1]
+      dy_data$seasonality<-seasonal_factor[1:sz]
       dy_data$Day<-seq.Date(as.Date(input$date_range[1])+1, as.Date(input$date_range[2]), "days")
-      print(head(dy_data))
-      plot_tot_inf(dy_data)
+      
+      t<-list(size=20,
+              color='black')
+      
+      p1 <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+        layout( xaxis = list(title = list(text="<b>",font=t), tickangle=-45,tickfont=list(size=20), zerolinewidth=2),
+                yaxis = list (title = list(text="<b>Daily total incidences",font=t), rangemode='tozero', tickfont=list(size=20))) %>%
+        add_trace(x = ~Day, y = ~tot_inf, name = '<b>Infection', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Infections: ',round(tot_inf))) %>%
+        add_trace(x = ~Day, y = ~tot_dead, name = '<b>Deaths', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Deaths: ',round(tot_dead)))
       
       
+      ay <- list(
+        tickfont = list(color = 'rgb(22, 96, 167)',size=20),
+        overlaying = "y",
+        side = "right",
+        # rangemode='tozero',
+        title = list(text="<b>Seasonality",font=t))
+      
+      p1 <- p1 %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
+                           mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'),
+                           hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Seasonality: ',seasonality))
+      
+      visible_list<-c(T,T,T)
+      
+      if (apply_measures=='on'){
+        
+        
+        
+        color_list<-c('#b7961e','#1e8cb7','#e04265',
+                      # '#961eb7',
+                      '#1eb796','#b74a1e','#6e42e0')
+        # color_list<-c('rgb(0,53,152)','rgb(0,23,152)','rgb(0,53,172)','rgb(0,90,95)','rgb(0,20,25)','rgb(0,55,100)')
+        f_color_list<-c('rgba(183,150,30,0.3)','rgba(30,140,183,0.3)','rgba(224,66,101,0.3)',
+                        # 'rgba(150,30,183,0.2)',
+                        'rgba(30,183,150,0.3)','rgba(183,74,30,0.3)','rgba(110,66,224,0.3)')
+        m_inf<-max(dy_data[,c('tot_inf','tot_dead')])
+        y1l<-m_inf/4 #+m_inf/4
+        text<-delay_measures$Flag
+        x_box<-data.frame(x=c(as.Date(input$date_range[1]+delay_measures$Delay),as.Date(input$date_range[2])),y=rep(y1l,(length(text)+1)),
+                          Flag=c(delay_measures$Flag,'NULL'))
+        
+        print(x_box)
+        print(delay_measures)
+        
+        
+        
+        for (i in 1:length(delay_measures$Delay)){
+          visible_list<-c(visible_list,'T')
+          
+          print(paste('<br>',unlist(strsplit(as.character(x_box$Flag[1:i]),'-')),
+                      unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'))
+          
+          print(unlist(strsplit(as.character(x_box$Flag[i]),'-')))
+          
+          p1<-p1 %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
+                             fillcolor = f_color_list[i],
+                             hoveron = 'fills',
+                             marker = list(
+                               color = f_color_list[i]
+                             ),
+                             line = list(
+                               color = f_color_list[i]
+                             ),
+                             text = paste(paste(paste(x_box$Flag[1:i],collapse = '-'),'contact reduction' ), '<br>Start Date: ', x_box$x[i],
+                                          paste(paste('<br>',unlist(strsplit(as.character(x_box$Flag[1:i]),'-')),
+                                                      unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'),collapse = ',')),
+                             
+                             hoverinfo = 'text',showlegend = F)
+          
+          
+        }
+        
+        
+      }
+      
+      p1 <- p1 %>% layout(
+        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=15)),
+        hovermode='x unified',
+        hoverlabel=list(font=list(size=14)),
+        updatemenus = list(
+          list(
+            type = "buttons",
+            # active=1,
+            direction = "right",
+            xanchor = 'center',
+            yanchor = "top",
+            # pad = list('r'= 0, 't'= 10, 'b' = 0),
+            x = 0.5,
+            y = 1.27,
+            # bgcolor='rgba(255,165,0,0.2)',
+            
+            font=list(size=16),
+            bordercolor='orange',
+            borderwidth=3,
+            buttons = list(
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",rangemode='tozero',title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+                   label = "Linear"),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",rangemode='tozero',title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+                   label = "Log")
+            )
+          )
+        )
+      ) %>%config(displaylogo=FALSE)
+      
+      
+      
+      
+      
+      # plot_age_inf_plotly(dy_data)
+      
+      output$total <- renderPlotly({  
+      
+      p1
+      
     })
-
-    output$tot_dead <- renderRbokeh({
-      plot_tot_dead(dy_data)
-    })
-
+    
+    
+    
+    
+    
     
     
     
@@ -623,7 +738,9 @@ shinyServer(function(input, output, session) {
     #   
     # })
     
-    output$age_inf_plotly <- renderPlotly({
+    
+      
+      
       
       sz=dim(dy_data)[1]
       dy_data$seasonality<-seasonal_factor[1:sz]
@@ -632,7 +749,7 @@ shinyServer(function(input, output, session) {
       t<-list(size=20,
               color='black')
       
-      p <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+      p2 <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
         layout( xaxis = list(title = list(text="<b>",font=t), tickangle=-45,tickfont=list(size=20), zerolinewidth=2),
                 yaxis = list (title = list(text="<b>Daily incidences",font=t), rangemode='tozero', tickfont=list(size=20))) %>%
         add_trace(x = ~Day, y = ~a1_inf, name = '<b>0-18', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>0-18 Incidences: ',round(a1_inf))) %>%
@@ -648,7 +765,7 @@ shinyServer(function(input, output, session) {
         # rangemode='tozero',
         title = list(text="<b>Seasonality",font=t))
       
-      p <- p %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
+      p2 <- p2 %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
                            mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'),
                            hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Seasonality: ',seasonality))
       
@@ -684,7 +801,7 @@ shinyServer(function(input, output, session) {
           
           print(unlist(strsplit(as.character(x_box$Flag[i]),'-')))
           
-          p<-p %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
+          p2<-p2 %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
                              fillcolor = f_color_list[i],
                              hoveron = 'fills',
                              marker = list(
@@ -730,8 +847,8 @@ shinyServer(function(input, output, session) {
         
       }
       
-      p <- p %>% layout(
-        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=20)),
+      p2 <- p2 %>% layout(
+        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=15)),
         hovermode='x unified',
         hoverlabel=list(font=list(size=14)),
         updatemenus = list(
@@ -749,9 +866,9 @@ shinyServer(function(input, output, session) {
             bordercolor='orange',
             borderwidth=3,
             buttons = list(
-              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",rangemode='tozero',title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
                    label = "Linear",bgcolor='rgba(255,165,0,0.2)'),
-              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",rangemode='tozero',title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
                    label = "Log")
             )
           )
@@ -765,17 +882,19 @@ shinyServer(function(input, output, session) {
       # plot_age_inf_plotly(dy_data)
       
       
+      output$age_inf_plotly <- renderPlotly({  
+        p2
       
-      
-      
+     
     })
     
     # output$age_inf_log <- renderPlot({
     #   plot_age_inf_log(dy_data)
     # })
     
-    output$age_dead <- renderPlotly({
+    
       
+      req(dy_data, cancelOutput = FALSE)
       
       sz=dim(dy_data)[1]
       dy_data$seasonality<-seasonal_factor[1:sz]
@@ -784,7 +903,7 @@ shinyServer(function(input, output, session) {
       t<-list(size=20,
               color='black')
       
-      p <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
+      p3 <- plot_ly(dy_data, type = 'scatter', mode = 'lines',line = list(width = 4))%>% 
         layout( xaxis = list(title = list(text="<b>",font=t), tickangle=-45,tickfont=list(size=20), zerolinewidth=2),
                 yaxis = list (title = list(text="<b>Daily deaths",font=t), rangemode='tozero', tickfont=list(size=20))) %>%
         add_trace(x = ~Day, y = ~a1_dead, name = '<b>0-18', hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>0-18 Deaths: ',round(a1_dead))) %>%
@@ -800,7 +919,7 @@ shinyServer(function(input, output, session) {
         # rangemode='tozero',
         title = list(text="<b>Seasonality",font=t))
       
-      p <- p %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
+      p3 <- p3 %>% add_trace(x = ~Day, y = ~seasonality, name = '<b>Seasonality', yaxis = "y2",type = 'scatter', 
                            mode = 'lines', line = list(color = 'rgb(22, 96, 167)', width = 4, dash = 'dash'),
                            hoverinfo='text', text=~paste('</br>Days: ',Day,'</br>Seasonality: ',seasonality))
       
@@ -832,7 +951,7 @@ shinyServer(function(input, output, session) {
                       unlist(delay_measures[i,unlist(strsplit(as.character(x_box$Flag[1:i]),'-'))],use.names = FALSE)*100,'%'))
           
           
-          p<-p %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
+          p3<-p3 %>% add_trace(x=c(x_box[c(i,(i+1)),1],rev(x_box[c(i,(i+1)),1])),y=c(0,0,x_box[c(i,(i+1)),2]),type = 'scatter',fill = 'toself',
                              fillcolor = f_color_list[i],
                              hoveron = 'fills',
                              marker = list(
@@ -853,8 +972,8 @@ shinyServer(function(input, output, session) {
         
       }
       
-      p <- p %>% layout(
-        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=20)),
+      p3 <- p3 %>% layout(
+        title = "",yaxis2 = ay,legend = list(orientation = 'v',x = 110, y = 1.2, font=list(size=15)),
         hovermode='x unified',
         hoverlabel=list(font=list(size=14)),
         updatemenus = list(
@@ -872,16 +991,17 @@ shinyServer(function(input, output, session) {
             bordercolor='orange',
             borderwidth=3,
             buttons = list(
-              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "linear",rangemode='tozero',title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
                    label = "Linear",bgcolor='rgba(255,165,0,0.2)'),
-              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
+              list(method = "update",args = list(list("visible", visible_list),list(yaxis = list(type = "log",rangemode='tozero',title = list(text="<b>Daily incidences",font=t),tickfont=list(size=20)))),
                    label = "Log")
             )
           )
         )
       ) %>%config(displaylogo=FALSE)
       
-      
+  output$age_dead <- renderPlotly({   
+    p3
       
       # plot_age_dead(dy_data)
     })
@@ -1023,7 +1143,7 @@ shinyServer(function(input, output, session) {
   ######## end of observe event
   
   
-  
+  ######## reset
   observeEvent(input$reset, {
     lists_input<-names(input)
     for (i in 1:length(names(input))){

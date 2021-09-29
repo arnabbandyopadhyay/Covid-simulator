@@ -439,7 +439,7 @@ posfun <- function(t, y, parms){
 }
 
 ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_matrix_features,
-                         time,R0,cmat_before_measures,cmat_after_measures,vaccination,
+                         time,R0,cmat_before_measures,cmat_after_measures,vaccination_start, vaccination,
                          agreed_vac_percent,gap,delay_measures,apply_measures){
   
   pop_a1<-init_pop[1]
@@ -512,7 +512,8 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   outode<-rbind(outode, c(time=0,init_cond))
   
   timestep<-seq(0,1,0.5)
-  vac_start<-30
+  vac_start<-vaccination_start*30
+  
   
   max_age_2_vac<-pop_a2*(1-agreed_vac_percent[1])
   max_age_3_vac<-pop_a3*(1-agreed_vac_percent[2])
@@ -522,22 +523,22 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   
   for (simtime in 1:time){
     
-    # if (apply_measures=='on'){
-    #   
-    #   
-    #   if (simtime %in% (delay_measures$Delay)){
-    #     print(simtime)
-    #     working_mat<-as.vector(t(cmat_after_measures[[which(delay_measures$Delay==simtime)]]))
-    #     print(working_mat)
-    #     for (i in 1:length(cm_pars)){assign(cm_pars[i],working_mat[i])}
-    #     print(zcm11)
-    #     
-    #     
-    #   }
-    # }
-    # else {
-    #   for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
-    # }
+    if (apply_measures=='on'){
+
+
+      if (simtime %in% (delay_measures$Delay)){
+        print(simtime)
+        working_mat<-as.vector(t(cmat_after_measures[[which(delay_measures$Delay==simtime)]]))
+        print(working_mat)
+        for (i in 1:length(cm_pars)){assign(cm_pars[i],working_mat[i])}
+        print(zcm11)
+
+
+      }
+    }
+    else {
+      for (i in 1:length(cm_pars)){assign(cm_pars[i],cm_before_measures[i])}
+    }
       
       
     
@@ -572,7 +573,7 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
     
   #   # 1st vaccination
   #   
-   
+  
 
     if (simtime>vac_start){
 
@@ -584,47 +585,240 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
       y_vac<-vaccination[2]
       yy_vac<-vaccination[1]
 
-      d_vac<-o_vac+y_vac
+      # d_vac<-o_vac+y_vac
 
       # 4th age group
       
-      if (init_cond[76]>max_age_4_vac){
-        init_cond[76]<-init_cond[76]-o_vac;
-        init_cond[87]<-init_cond[87]+o_vac;
-        o_vac<-0;
+      
+      # print(simtime)
+      # 
+      # print(init_cond['sus_a4']+init_cond['rx_a4'])
+      # # print(max_age_4_vac)
+      # print(c(init_cond['sus_a4'],init_cond['rx_a4'],init_cond['rz_a4'],init_cond['sus_a4v'],init_cond['sus_a4fv']))
+      # # print(sum(init_cond[76:100]))
+      
+      if ((init_cond['sus_a4']+init_cond['rx_a4']+init_cond['rz_a4'])>max_age_4_vac){
+        # print(c(init_cond['sus_a4'],init_cond['rx_a4'],init_cond['rz_a4'],init_cond['sus_a4v'],init_cond['sus_a4fv']))
+
+        if (init_cond['sus_a4']>max_age_4_vac){
+          print('entering')
+          cnt_4=as.vector(init_cond['sus_a4']-max_age_4_vac)
+          init_cond['sus_a4']<-init_cond['sus_a4']-o_vac;
+          # init_cond[87]<-init_cond[87]+o_vac;
+          # o_vac<-0;
+          
+          if (init_cond['sus_a4']<max_age_4_vac){
+            # init_cond['sus_a4v']<-init_cond['sus_a4v']-(o_vac-max_age_4_vac)
+            init_cond['sus_a4']<-max_age_4_vac
+            init_cond['sus_a4v']<-init_cond['sus_a4v']+cnt_4
+            o_vac<-o_vac-cnt_4
+          }
+          else{
+            init_cond[87]<-init_cond[87]+o_vac
+            o_vac<-0
+            }
+          
+        }
+        else if (init_cond['rx_a4']>o_vac){
+          
+          init_cond['rx_a4']<-init_cond['rx_a4']-o_vac;
+          init_cond['sus_a4v']<-init_cond['sus_a4v']+o_vac;
+          
+          o_vac<-0;
+          
+        }
+        # else if (init_cond['rx_a4']<o_vac){
+        #   print('second')
+        #   init_cond['sus_a4v']<-init_cond['sus_a4v']+init_cond['rx_a4']
+        #   o_vac<-o_vac-init_cond['rx_a4']
+        #   init_cond['rx_a4']<-0
+        #   
+        # }
+        
+        else if ((simtime>180) && (init_cond['rz_a4']>o_vac)){
+        
+          init_cond['rz_a4']<-init_cond['rz_a4']-o_vac;
+          init_cond['rx_a4fv']<-init_cond['rx_a4fv']+o_vac;
+          
+          o_vac<-0;
+          
+        }
+        # else if ((simtime>180) && (init_cond['rz_a4']<o_vac)){
+        #   print('3rd')
+        #   init_cond['rx_a4fv']<-init_cond['rx_a4fv']+init_cond['rz_a4']
+        #   o_vac<-o_vac-init_cond['rz_a4']
+        #   init_cond['rz_a4']<-0;
+        #   
+        #   
+        #   o_vac<-0;
+        #   
+        # }
 
       }
       
+      
+
+      
+      # if (init_cond[76]>max_age_4_vac){
+      #   print(init_cond[76])
+      #   init_cond[76]<-init_cond[76]-o_vac;
+      #   init_cond[87]<-init_cond[87]+o_vac;
+      #   o_vac<-0;
+      # 
+      # }
+
     
 
       # 3rd age group
-
-      if (init_cond[51]>max_age_3_vac){
-        init_cond[51]<-init_cond[51]-(y_vac+o_vac)
-        init_cond[62]<-init_cond[62]+(y_vac+o_vac)
-        y_vac<-0;
-        o_vac<-0;
-        d_vac<-0;
-        if (init_cond[51]<max_age_3_vac){
-          cnt<-max_age_3_vac-init_cond[51]
-          init_cond[51]<-max_age_3_vac
-          init_cond[62]<-init_cond[62]-cnt
-          init_cond[26]<-init_cond[26]-cnt
-          init_cond[37]<-init_cond[37]+cnt
+      
+      if ((init_cond['sus_a3']+init_cond['rx_a3']+init_cond['rz_a3'])>max_age_3_vac){
+        
+        if (init_cond['sus_a3']>max_age_3_vac){
+          cnt_3=as.vector(init_cond['sus_a3']-max_age_3_vac)
+          init_cond['sus_a3']<-init_cond['sus_a3']-(y_vac+o_vac)
+          if (init_cond['sus_a3']<max_age_3_vac){
+            init_cond['sus_a3']<-max_age_3_vac
+            init_cond['sus_a3v']<-init_cond['sus_a3v']+cnt_3
+            d_vac<-o_vac+y_vac-cnt_4
+          }
+          else{
+            init_cond['sus_a3v']<-init_cond['sus_a3v']+(y_vac+o_vac)
+            o_vac<-y_vac<-0
+          }
+          
         }
-
-      }
-
-      if (init_cond[26]>max_age_2_vac){
-        init_cond[26]<-init_cond[26]-(yy_vac+d_vac)
-        init_cond[37]<-init_cond[37]+yy_vac+d_vac
-        d_vac<-0
-        if (init_cond[26]<max_age_2_vac){
-          init_cond[37]<-init_cond[37]-(max_age_2_vac-init_cond[26])
-          init_cond[26]<-max_age_2_vac
-
+        else if (init_cond['rx_a3']>(y_vac+o_vac)){
+          
+          init_cond['rx_a3']<-init_cond['rx_a3']-(y_vac+o_vac)
+          init_cond['sus_a3v']<-init_cond['sus_a3v']+(y_vac+o_vac)
+          
+          o_vac<-y_vac<-0
+          
         }
+    
+        
+        else if ((simtime>180) && (init_cond['rz_a3']>(y_vac+o_vac))){
+         
+          init_cond['rz_a3']<-init_cond['rz_a3']-(y_vac+o_vac)
+          init_cond['rx_a3fv']<-init_cond['rx_a3fv']+(y_vac+o_vac)
+          
+          o_vac<-y_vac<-0
+          
+        }
+        
+        
       }
+      
+      
+
+      # if (init_cond[51]>max_age_3_vac){
+      #   init_cond[51]<-init_cond[51]-(y_vac+o_vac)
+      #   init_cond[62]<-init_cond[62]+(y_vac+o_vac)
+      #   y_vac<-0;
+      #   o_vac<-0;
+      #   d_vac<-0;
+      #   if (init_cond[51]<max_age_3_vac){
+      #     cnt<-max_age_3_vac-init_cond[51]
+      #     init_cond[51]<-max_age_3_vac
+      #     init_cond[62]<-init_cond[62]-cnt
+      #     init_cond[26]<-init_cond[26]-cnt
+      #     init_cond[37]<-init_cond[37]+cnt
+      #   }
+      # 
+      # }
+      
+      ########### 2nd age group
+      
+      if ((init_cond['sus_a2']+init_cond['rx_a2']+init_cond['rz_a2'])>max_age_2_vac){
+        
+        if (init_cond['sus_a2']>max_age_2_vac){
+          cnt_2=as.vector(init_cond['sus_a2']-max_age_2_vac)
+          init_cond['sus_a2']<-init_cond['sus_a2']-(y_vac+o_vac+yy_vac)
+          if (init_cond['sus_a2']<max_age_2_vac){
+            init_cond['sus_a2']<-max_age_2_vac
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+cnt_2
+            
+          }
+          else{
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(y_vac+o_vac+yy_vac)
+            o_vac<-y_vac<-yy_vac <-0
+          }
+          
+        }
+        else if (init_cond['rx_a2']>(y_vac+o_vac+yy_vac)){
+          
+          init_cond['rx_a2']<-init_cond['rx_a2']-(y_vac+o_vac+yy_vac)
+          init_cond['sus_a2v']<-init_cond['sus_a2v']+(y_vac+o_vac+yy_vac)
+          
+          o_vac<-y_vac<-yy_vac <-0
+          
+        }
+        else if ((simtime>180) && (init_cond['rz_a2']>(y_vac+o_vac+yy_vac))){
+          
+          init_cond['rz_a2']<-init_cond['rz_a2']-(y_vac+o_vac+yy_vac)
+          init_cond['rx_a2fv']<-init_cond['rx_a2fv']+(y_vac+o_vac+yy_vac)
+          
+          o_vac<-y_vac<-yy_vac <-0
+          
+        }
+        else if (init_cond['rx_a2']<(y_vac+o_vac+yy_vac)){
+          
+          if (init_cond['rx_a2']>(yy_vac+y_vac)){
+            init_cond['rx_a2']<-init_cond['rx_a2']-(yy_vac+y_vac)
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(yy_vac+y_vac)
+            yy_vac<-y_vac<-0
+          }
+          else if (init_cond['rx_a2']>(yy_vac+o_vac)){
+            init_cond['rx_a2']<-init_cond['rx_a2']-(yy_vac+o_vac)
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(yy_vac+o_vac)
+            yy_vac<-o_vac<-0
+          }
+          else if (init_cond['rx_a2']>(o_vac+y_vac)){
+            init_cond['rx_a2']<-init_cond['rx_a2']-(o_vac+y_vac)
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(o_vac+y_vac)
+            o_vac<-y_vac<-0
+          }
+          else if (init_cond['rx_a2']>(yy_vac)){
+            init_cond['rx_a2']<-init_cond['rx_a2']-(yy_vac)
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(yy_vac)
+            yy_vac<-0
+          }
+          else if (init_cond['rx_a2']>(y_vac)){
+            init_cond['rx_a2']<-init_cond['rx_a2']-(y_vac)
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(y_vac)
+            y_vac<-0
+          }
+          else if (init_cond['rx_a2']>(o_vac)){
+            init_cond['rx_a2']<-init_cond['rx_a2']-(o_vac)
+            init_cond['sus_a2v']<-init_cond['sus_a2v']+(o_vac)
+            o_vac<-0
+          }
+          
+          
+        }
+        
+        
+      }
+      # print(c(init_cond['sus_a4']+init_cond['rx_a4']+init_cond['rz_a4'],max_age_4_vac))
+      # print(c(init_cond['sus_a4'], init_cond['rx_a4'], init_cond['rz_a4']))
+      # 
+      # print(c(init_cond['sus_a3']+init_cond['rx_a3']+init_cond['rz_a3'],max_age_3_vac))
+      # print(c(init_cond['sus_a3'], init_cond['rx_a3'], init_cond['rz_a3']))
+      # 
+      # print(c(init_cond['sus_a2']+init_cond['rx_a2']+init_cond['rz_a2'],max_age_2_vac))
+      # print(c(init_cond['sus_a2'], init_cond['rx_a2'], init_cond['rz_a2']))
+      # print(c(o_vac+y_vac+yy_vac,o_vac, y_vac, yy_vac))
+
+      # if (init_cond[26]>max_age_2_vac){
+      #   init_cond[26]<-init_cond[26]-(yy_vac+d_vac)
+      #   init_cond[37]<-init_cond[37]+yy_vac+d_vac
+      #   d_vac<-0
+      #   if (init_cond[26]<max_age_2_vac){
+      #     init_cond[37]<-init_cond[37]-(max_age_2_vac-init_cond[26])
+      #     init_cond[26]<-max_age_2_vac
+      # 
+      #   }
+      # }
 
       ## 2nd vaccine
 
@@ -708,11 +902,21 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
 
 
     }
+    # extra=c(extra_inf_a1=extra_inf_a1,extra_inf_a2=extra_inf_a2,
+            # extra_inf_a3=extra_inf_a3,extra_inf_a4=extra_inf_a4)
+    
+    # outode<-rbind(outode,out[length(timestep),])
+    
+    outode[nrow(outode),2:101]<-as.vector(init_cond)
+    
+    # print(outode[nrow(outode),])
 
 
   }
   
-  # print(rowSums(outode[,2:(ncol(outode))]))
+  print(rowSums(outode[,2:(ncol(outode))]))
+  
+  
   
   ode_a1_inf<-diff(rowSums(outode[,c('i_a1','id_a1','ir_a1','rz_a1','dead_a1','i_a1v','ix_a1v','rx_a1v','dead_a1v','i_a1fv','ix_a1fv','rx_a1fv','dead_a1fv')]))
   ode_a2_inf<-diff(rowSums(outode[,c('i_a2','id_a2','ir_a2','rz_a2','dead_a2','i_a2v','ix_a2v','rx_a2v','dead_a2v','i_a2fv','ix_a2fv','rx_a2fv','dead_a2fv')]))
@@ -737,7 +941,7 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   
   
 }
-
+sink()
 
 plot_tot_inf<-function(data){
 

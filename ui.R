@@ -26,7 +26,7 @@ shinyUI(pageWithSidebar(
               windowTitle = 'SECIR UI'),
   
   # Sidebar with controls
-  sidebarPanel(width=4,
+  sidebarPanel(width=3,
                shinyjs::useShinyjs(),
                
  
@@ -104,7 +104,8 @@ shinyUI(pageWithSidebar(
                         ),
                 tabPanel("Model parameters",
                          
-                         airDatepickerInput('date_range','Period',range = TRUE, value=c(Sys.Date(), Sys.Date()+180),view = "months"),
+                         # airDatepickerInput('date_range','Period',range = TRUE, value=c(Sys.Date(), Sys.Date()+180),view = "months"),
+                         dateRangeInput('date_range','Period', start=Sys.Date(), end= (Sys.Date()+180), startview = "months", separator = " to "),
                          checkboxInput('seasonality','Seasonality',value = FALSE),
                          conditionalPanel(condition='input.seasonality == true',
                                           sliderInput('seasonality_amplitude','Amplitude', min=0, max=0.9, value=0)),
@@ -126,6 +127,7 @@ shinyUI(pageWithSidebar(
                                           uiOutput('age_4_vaccinated'))),
 
                 tabPanel("Vaccination",
+                         sliderInput('vaccination_start','Vaccination campaign begins after (in months)',min=1,max=12,value=1),
                          helpText(h3('First Vaccination',style='color:#000000;')),
                          helpText(h4('No vaccination of Age group 0-18',style='color:#000000;')),
                          sliderInput('age_2','Age group 18-40',min=0,max=500000,value=0),
@@ -177,7 +179,7 @@ shinyUI(pageWithSidebar(
                 #         )
                 ),
     actionButton('reset','Reset',icon('refresh'),style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
-    actionButton('simulate','Simulate',icon('refresh'),style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
+    actionButton('simulate','Simulate',icon('paper-plane'),style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
    
     
     hr(),
@@ -201,9 +203,13 @@ shinyUI(pageWithSidebar(
   mainPanel(
     
     # allways show matrix with contact rates
-    fluidRow(splitLayout(cellWidths = c("40%", "30%","30%"),withSpinner(plotOutput('plot_cnt_matrix',width = "450px", height = "300px")),
-                         withSpinner(plotOutput('tot_inf',width = "350px", height = "350px")),
-                         withSpinner(rbokehOutput('tot_dead',width = "350px", height = "350px")))),
+    # fluidRow(splitLayout(cellWidths = c("40%", "30%","30%"),withSpinner(plotOutput('plot_cnt_matrix',width = "450px", height = "300px")),
+    #                      withSpinner(plotOutput('tot_inf',width = "350px", height = "350px")),
+    #                      withSpinner(rbokehOutput('tot_dead',width = "350px", height = "350px")))),
+    
+    fluidRow(splitLayout(cellWidths = c("35%", "65%"),withSpinner(plotOutput('plot_cnt_matrix',width = "400px", height = "350px")),
+                         withSpinner(plotlyOutput('total',width = "750px", height = "400px"))
+                         )),
     
     # previous second panel
     # fluidRow(
@@ -216,7 +222,7 @@ shinyUI(pageWithSidebar(
     #   )),
     #                                                                                           
     
-    fluidRow(splitLayout(cellWidths = c("100%"),withSpinner(plotlyOutput('age_inf_plotly',width = "1200px", height = "500px")))),
+    fluidRow(splitLayout(cellWidths = c("100%"),withSpinner(plotlyOutput('age_inf_plotly',width = "1200px", height = "450px")))),
     
     # fluidRow(splitLayout(cellWidths = c("90%", "10%"),withSpinner(plotOutput('age_inf',width = "1150px", height = "250px")),
     #                      actionButton("logscale", "log"))),
@@ -232,7 +238,7 @@ shinyUI(pageWithSidebar(
     
                 
     
-    fluidRow(withSpinner(plotlyOutput('age_dead',width = "1200px", height = "500px"))),
+    fluidRow(withSpinner(plotlyOutput('age_dead',width = "1200px", height = "450px"))),
     
     
     
