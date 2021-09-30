@@ -184,26 +184,33 @@ version_id <- paste0('v',read.table('./DESCRIPTION.txt',nrows=1,sep=' ',colClass
 
 
 # project website url
-url        <- a("socialcontactdata.org", href="http://www.socialcontactdata.org",target="_blank")
+url_group        <- a("Systems Immunology group", href="https://www.helmholtz-hzi.de/en/research/research-topics/immune-response/systems-immunology/m-meyer-hermann/#anchorsection",target="_blank")
 
-# socrates data tool url
-url_socrates <- a("SOCRATES initiative", href="http://socialcontactdata.org/socrates/",target="_blank")
 
-# socrates comix url
-url_socrates_comix <- a("SOCRATES CoMix", href="http://socialcontactdata.org/socrates-comix/",target="_blank")
 
-# SPC doc url
-url_doc_spc <- a("is provided here.", href="https://github.com/lwillem/socrates_rshiny/blob/master/doc/doc_spc_france.md",target="_blank")
 
-# weights doc url
-url_doc_weights <- a("More info is provided here.", href="https://github.com/lwillem/socrates_rshiny/blob/master/doc/doc_weights.pdf",target="_blank")
+# 
+# # project website url
+# url        <- a("socialcontactdata.org", href="http://www.socialcontactdata.org",target="_blank")
+# 
+# # socrates data tool url
+# url_socrates <- a("SOCRATES initiative", href="http://socialcontactdata.org/socrates/",target="_blank")
+# 
+# # socrates comix url
+# url_socrates_comix <- a("SOCRATES CoMix", href="http://socialcontactdata.org/socrates-comix/",target="_blank")
+# 
+# # SPC doc url
+# url_doc_spc <- a("is provided here.", href="https://github.com/lwillem/socrates_rshiny/blob/master/doc/doc_spc_france.md",target="_blank")
+# 
+# # weights doc url
+# url_doc_weights <- a("More info is provided here.", href="https://github.com/lwillem/socrates_rshiny/blob/master/doc/doc_weights.pdf",target="_blank")
 
 # number of digits to round
 format_num_digits <- 2
 
 # # UserInterface title
 # ui_title <- 'Social Contact Rates (SOCRATES) Data Tool'
-ui_title <- 'SECIR UI'
+ui_title <- h1('COVID Simulator')
 
 # boolean for selectInput "duration"
 bool_selectInput_duration <- "true"

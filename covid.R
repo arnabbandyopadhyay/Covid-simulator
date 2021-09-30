@@ -8,7 +8,7 @@ library('stringdist')
 
 demography<-read.csv('demography.csv',header = TRUE)
 colnames(demography)<-c('Country','0-18','18-40','40-60','60+','Total','Ratio 0-18','Ratio 18-40','Ratio 40-60','Ratio 60+')
-correct_names<-names(opt_country)
+correct_names<-opt_country
 rownames(demography)<-correct_names[amatch(demography$Country, correct_names, maxDist=Inf, method = 'jw')]
 
 ####### original one
@@ -323,7 +323,7 @@ rn<-(r6*r7*r10)/(r7*r10+r6*r10+r6*r7)
 cfr_m<-mean(c(cfr_a1,cfr_a2,cfr_a3,cfr_a4))
 
 p2_a1=(1-alpha)/r3 + alpha/r9 + (1-alpha)*mu/r11 + (1-alpha)*(1-mu)/r4 + bet*(1-alpha)*mu*cfr_m/r10 +bet*(1-alpha)*mu*(1-cfr_m)/r12;
-s_n_nv=1;
+
 
 
 # f_a<-c(0.1645, 0.2660, 0.28385, 0.2855)
@@ -367,6 +367,9 @@ s_n_nv=1;
 init_cond_fn<-function(country,imm_a2,imm_a3,imm_a4){
 
   pop<-unlist(demography[country == rownames(demography),2:5],use.names = FALSE)
+  if (length(pop)==0){
+    pop<-unlist(demography[amatch(country, rownames(demography),maxDist=Inf,method='jw'),2:5],use.names = FALSE)
+  }
 
   init_cond<-c(sus_a1=pop[1], exp_a1=100, ci_a1=0, cr_a1=0, i_a1=0,
                ix_a1=0, id_a1=0, ir_a1=0, rx_a1=0, rz_a1=0, dead_a1=0,
@@ -447,6 +450,8 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   pop_a3<-init_pop[3]
   pop_a4<-init_pop[4]
   
+  print(cmat_before_measures)
+  
   # polymod$contacts<-polymod$contacts[polymod[["contacts"]][["duration_multi"]]>=3]
   
   # bool_reciprocal      <- opt_matrix_features[[1]]  %in% cnt_matrix_features
@@ -476,7 +481,8 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
 
   baseR_mat<-cmat_before_measures
   
-  
+  print('baseR_mat')
+  print(baseR_mat)
   
   
   cm_pars<-c('zcm11','zcm12','zcm13','zcm14','zcm21','zcm22','zcm23','zcm24',
@@ -487,6 +493,7 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
   
   wcm<-t(cmat_before_measures)
   f_a<-age_ratio
+  print(f_a)
   
   for (i in 1:4){
     for (j in 1:4){
@@ -494,12 +501,22 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
     }
   }
   
+  # print(baseR_mat)
   eigenvalues = eigen(baseR_mat)$values
+  print(eigenvalues)
+  
   ev=max(eigenvalues)
   
+  s_n_nv=as.vector(init_cond['sus_a1']+init_cond['sus_a2']+init_cond['sus_a3']+init_cond['sus_a4']+
+            r1_a1v*(init_cond['sus_a1v']+init_cond['sus_a2v']+init_cond['sus_a3v']+init_cond['sus_a4v'])+
+            r1_a1fv*(init_cond['sus_a1fv']+init_cond['sus_a2fv']+init_cond['sus_a3fv']+init_cond['sus_a4fv']))/(pop_a1+pop_a2+pop_a3+pop_a4)
+  
+  print(paste('s_n_v:',s_n_nv))
+            
+  
   R1<-R0/((p2_a1*s_n_nv)*ev)
-  
-  
+ 
+  print(c(p2_a1, s_n_nv, ev))
   
   # print(c(ev,R1))
  
@@ -563,7 +580,7 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
               zcm34=zcm34,zcm41=zcm41,zcm42=zcm42,zcm43=zcm43,zcm44=zcm44,pop_a1=pop_a1,pop_a2=pop_a2,pop_a3=pop_a3,pop_a4=pop_a4)
     
     
-  
+  print(params)
     
     
     out <- ode(y =init_cond, times=timestep, covid, params)
@@ -601,7 +618,6 @@ ode_dynamics <- function(country,init_cond,init_pop,seasonality,age_ratio,cnt_ma
         # print(c(init_cond['sus_a4'],init_cond['rx_a4'],init_cond['rz_a4'],init_cond['sus_a4v'],init_cond['sus_a4fv']))
 
         if (init_cond['sus_a4']>max_age_4_vac){
-          print('entering')
           cnt_4=as.vector(init_cond['sus_a4']-max_age_4_vac)
           init_cond['sus_a4']<-init_cond['sus_a4']-o_vac;
           # init_cond[87]<-init_cond[87]+o_vac;

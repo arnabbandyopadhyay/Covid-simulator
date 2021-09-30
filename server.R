@@ -293,6 +293,8 @@ shinyServer(function(input, output, session) {
     
     
     
+    
+    
     # write.csv(out$matrix,'test.csv')
     # 
     # zcm11<-out$matrix[1,1]
@@ -488,6 +490,9 @@ shinyServer(function(input, output, session) {
     
     
     age_ratio<-unlist(demography[input$country == rownames(demography),7:10],use.names = FALSE)
+    if (length(age_ratio)==0){
+      age_ratio<-unlist(demography[amatch(input$country, rownames(demography),maxDist=Inf,method='jw'),7:10],use.names = FALSE)
+    }
     print(age_ratio)
     
     
@@ -530,6 +535,10 @@ shinyServer(function(input, output, session) {
     else {
       init_cond<-init_cond_fn(input$country,imm[1],imm[2],imm[3])
       init_pop<-unlist(demography[input$country == rownames(demography),2:5],use.names = FALSE)
+      if (length(init_pop)==0){
+        init_pop<-unlist(demography[amatch(input$country, rownames(demography),maxDist=Inf,method='jw'),2:5],use.names = FALSE)
+      }
+      
     }
     
     if (input$date_range){
@@ -558,6 +567,8 @@ shinyServer(function(input, output, session) {
     
     print(seasonal_factor)
     print(length(seasonal_factor))
+    
+    print(cmat_before_measures)
     
     dy_data<-ode_dynamics(country=input$country,init_cond=init_cond,init_pop=init_pop,seasonality=seasonal_factor,
                           age_ratio=age_ratio,cnt_matrix_features=opt_matrix_features[features_select],time=sim_time,R0=input$R0,
@@ -1155,8 +1166,14 @@ shinyServer(function(input, output, session) {
 
   
   # create url link
-  output$socrates_website <- renderUI({
-    tagList(url_socrates)
+  output$group_website <- renderUI({
+    tagList(url_group)
+  })
+  
+  output$pdfview <- renderUI({
+    pdf("www/user_interface.pdf")
+    dev.off()
+    tags$iframe(style="height:600px; width:100%", src="user_interface.pdf")
   })
   
   # create url link

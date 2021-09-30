@@ -23,7 +23,7 @@ shinyUI(pageWithSidebar(
   #             windowTitle = paste0('SOCRATES (',version_id,')')),
   
   headerPanel(ui_title,
-              windowTitle = 'SECIR UI'),
+              windowTitle = 'COVID Simulator'),
   
   # Sidebar with controls
   sidebarPanel(width=3,
@@ -141,7 +141,7 @@ shinyUI(pageWithSidebar(
                          sliderInput('f_age_4','Age group 60+',min=0,max=500000,value=0),
                          ), 
                 
-                tabPanel("Options", 
+                tabPanel("Options",
                          checkboxInput("bool_age_range", "Age range: sample at random",value = TRUE),
                          checkboxInput("bool_age_missing", "Missing contact age: remove participant",value = FALSE),
                          checkboxInput("bool_matrix_limit", "Specify the color scale of the social contact matrix?",value = FALSE),
@@ -195,6 +195,22 @@ shinyUI(pageWithSidebar(
     #   uiOutput("socrates_website_comix")
     # },
     # helpText('SOCRATES',version_id)
+    
+    # add version and link to project website
+    headerPanel(""),
+    a("Download User guide",target="_blank",href="user_interface.pdf"),
+    br(),
+    tags$a(href="https://www.helmholtz-hzi.de/en/research/research-topics/immune-response/systems-immunology/m-meyer-hermann/#anchorsection", 
+           "Systems Immunology group", target="_blank"),
+    # uiOutput("pdfview"),
+    
+    helpText(h5('contact: arnab.bandyopadhyay@theoretical-biology.de'))
+    # tags$a(href="https://www.helmholtz-hzi.de/en/research/research-topics/immune-response/systems-immunology/m-meyer-hermann/#anchorsection", 
+           # "Systems Immunology group", target="_blank"),
+    # uiOutput("manual"),
+    # uiOutput("contact"),
+    # uiOutput("group_website"),
+    # uiOutput("more_info_model")
 
   ),
   
