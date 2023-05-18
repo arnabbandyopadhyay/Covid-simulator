@@ -1,11 +1,3 @@
-#___________________________________________________________________________
-# This file is part of the SOcial Contact RATES (SOCRATES) modelling project
-# 
-# => R-SHINY USER INTERFACE
-#
-#  Copyright 2020, SIMID, UNIVERSITY OF ANTWERP & HASSELT UNIVERSITY
-#___________________________________________________________________________
-# # FYI: To run SOCRATES via Github (latest version!)
 library('shiny')
 library('shinycssloaders')
 library('shinyWidgets')
