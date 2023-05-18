@@ -1,11 +1,3 @@
-#___________________________________________________________________________
-# This file is part of the SOcial Contact RATES (SOCRATES) modelling project
-# 
-# => MAIN SCRIPT FOR THE R-SHINY SERVER
-#
-#  Copyright 2020, SIMID, UNIVERSITY OF ANTWERP & HASSELT UNIVERSITY
-#___________________________________________________________________________
-
 # load all functions and packages
 # this is done automatically when running the App
 
