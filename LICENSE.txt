@@ -1,5 +1,5 @@
 ﻿Copyright (c) 2022 Arnab Bandyopadhyay
 Title: Covid simulator
-Description: 
+Description: Covid simulator is an online tool designed for generating various possible pandemic scenarios. This code is build upon 'socialmixr' R package (https://cran.r-project.org/web/packages/socialmixr/vignettes/socialmixr.html) and Rshiny App on social contact rates (SOCRATES, https://doi.org/10.1186/s13104-020-05136-9) which we integrated into our mathematical model to simulate pandemic scenarios.
 Maintainer: Arnab Bandyopadhyay <arnabrkmv@gmail.com>
 License: CC BY 4.0
