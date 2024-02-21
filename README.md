@@ -5,6 +5,6 @@ Covid simulator is an online tool designed for generating various possible pande
 
 <!--https://arnabbandyopadhyay.shinyapps.io/Covid-situation-simulator/ -->
 
-Press Simulate to play
+<!-- Press Simulate to play -->
 
 ![alt text](https://github.com/arnabbandyopadhyay/Covid-simulator/blob/main/contents.png)
